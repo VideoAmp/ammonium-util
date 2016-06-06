@@ -43,11 +43,30 @@ class Setup(classpath: Classpath, eval: Eval) {
     for ((scope, entries) <- classpathEntriesByScope) {
       log(s"Adding classpath entries${if (scope == "compile") "" else s" in configuration $scope"}")
 
-      for (entry <- entries) {
-        log(s"  $entry")
-      }
+      val expandedEntries =
+        entries.flatMap { entry =>
+          val expanded =
+            if (entry.endsWith("/*")) {
+              val dirName = entry.dropRight(1)
 
-      classpath.addPathInConfig(scope)(entries: _*)
+              new File(dirName).list.filter(_.endsWith(".jar")).map(dirName + _).sorted
+            }
+            else {
+              Array(entry)
+            }
+
+          if (expanded.length > 1) {
+            log(s"  $entry (which expands to:)")
+            expanded.map("    " + _).foreach(println)
+          }
+          else {
+            log(s"  $entry")
+          }
+
+          expanded
+        }
+
+      classpath.addPathInConfig(scope)(expandedEntries: _*)
       log()
     }
 
@@ -80,32 +99,55 @@ class Setup(classpath: Classpath, eval: Eval) {
 
     val codePreambles = setup.codePreambles.toSeq
 
-    for (codePreambles <- setup.codePreambles) {
-      for (CodePreamble(mod, code) <- codePreambles if code.nonEmpty) {
-        log(s"Initializing${if (mod == "default") "" else s" $mod"}")
+    val evalErrors = setup.codePreambles.toSeq.flatMap { codePreambles =>
+      codePreambles.flatMap {
+        case CodePreamble(name, code) if code.nonEmpty =>
+          log(s"Initializing${if (name == "default") "" else s" $name"}")
 
-        code.map(_.replaceAll("\n", ""))
-        val lines = code.flatMap(_.split("\n", -1))
+          val errors = code.flatMap { codeChunk =>
+            val optError = if (codeChunk.nonEmpty) {
+              val toEval = codeChunk.stripMargin
 
-        for (codeChunk <- code) {
-          if (codeChunk.nonEmpty) {
-            val stripped = codeChunk.stripMargin
+              log(toEval)
 
-            log(stripped.split("\n", -1).map("  " + _).mkString("\n"))
-            eval(stripped.replaceAll("\n", ""), silentEval)
+              eval(toEval, silentEval).fold(
+                { error =>
+                  log("Error: " + error.getClass.getSimpleName + ": " + error.msg)
+                  Some(error)
+                },
+                { _ => None }
+              )
+            }
+            else {
+              None
+            }
+
+            if (!silentEval) {
+              println
+            }
+
+            optError
           }
 
-          if (!silentEval) {
-            log()
-          }
-        }
+          log()
 
-        log()
+          errors
+        case _ => Nil
       }
     }
 
-    setup.preamble.foreach { message =>
-      println(message.stripMargin)
+    if (evalErrors.isEmpty) {
+      if (silent && !silentEval) {
+        println
+      }
+
+      setup.preamble.foreach { message =>
+        println(message.stripMargin)
+      }
+    }
+    else if (silent) {
+      println(s"Encountered ${evalErrors.size} evaluation error(s):")
+      evalErrors.foreach(error => println(error.getClass.getSimpleName + ": " + error.msg))
     }
   }
 }
