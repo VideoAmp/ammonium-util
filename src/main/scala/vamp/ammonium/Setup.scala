@@ -57,7 +57,7 @@ class Setup(classpath: Classpath, eval: Eval) {
 
           if (expanded.length > 1) {
             log(s"  $entry (which expands to:)")
-            expanded.map("    " + _).foreach(println)
+            expanded.map("    " + _).foreach(log)
           }
           else {
             log(s"  $entry")
