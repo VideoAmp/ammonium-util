@@ -1,8 +1,6 @@
 package vamp.ammonium.setup
 
-import java.io.File
-
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.typesafe.config.Config
 
 import configs.{ Configs, ConfigError, Result }
 import configs.syntax._
@@ -42,8 +40,7 @@ package object hocon {
       override def get(config: Config, path: String): Result[(String, Dependency)] = ???
     }
 
-  def parseSetupFile(setupFile: File): Option[Setup] = {
-    val config = ConfigFactory.parseFile(setupFile)
+  def extractSetup(config: Config): Option[Setup] = {
     Option(config.extract[Setup].valueOr { error =>
       error.messages.foreach(println)
       null

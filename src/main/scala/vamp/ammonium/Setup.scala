@@ -1,29 +1,41 @@
 package vamp.ammonium
 
 import setup.{ CodePreamble, Setup => SSetup }
+import setup.hocon.extractSetup
 
 import java.io.File
+import java.net.URL
 
 import ammonite.api.{ Classpath, Eval }
 
+import com.typesafe.config.{ Config, ConfigFactory }
+
 class Setup(classpath: Classpath, eval: Eval) {
   def fromFile(filename: String, silent: Boolean, silentEval: Boolean) {
-    import setup.hocon._
-
     val file = new File(filename)
 
     require(file.exists, s"No file at $filename")
     require(file.isFile, s"Not a regular file: $filename")
     require(file.canRead, s"Not readable: $filename")
 
-    val setupOpt = parseSetupFile(new File(filename))
+    val config = ConfigFactory.parseFile(new File(filename))
+    fromConfig(config, silent, silentEval)
+  }
+
+  def fromURL(url: URL, silent: Boolean, silentEval: Boolean) {
+    val config = ConfigFactory.parseURL(url)
+    fromConfig(config, silent, silentEval)
+  }
+
+  private def fromConfig(config: Config, silent: Boolean, silentEval: Boolean) {
+    val setupOpt = extractSetup(config)
     setupOpt.foreach { setup =>
-      init(filename, setup, silent, silentEval)
+      init(setup, silent, silentEval)
     }
   }
 
   // Stolen from ammonite.util.Setup
-  def init(name: String, setup: SSetup, silent: Boolean, silentEval: Boolean) {
+  def init(setup: SSetup, silent: Boolean, silentEval: Boolean) {
     def log(message: String = ""): Unit = if (!silent) { println(message) }
 
     val properties = Map(
@@ -96,8 +108,6 @@ class Setup(classpath: Classpath, eval: Eval) {
       classpath.addInConfig(scope)(deps: _*)
       log()
     }
-
-    val codePreambles = setup.codePreambles.toSeq
 
     val evalErrors = setup.codePreambles.toSeq.flatMap { codePreambles =>
       codePreambles.flatMap {
