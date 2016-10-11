@@ -29,7 +29,7 @@ object Bootstrap {
 
     logger("Checking manifest and fetching missing jar files...")
 
-    val (jarPaths, checksums) = (for {
+    val jarPaths = (for {
       JSON(Jar(name, signature)) <- jsons
       dir = jars/signature
       jarFile = dir/name
@@ -46,13 +46,12 @@ object Bootstrap {
         logger("Found locally:")
       }
 
-      (jarFile.toString,
-        (logger(jarFile.toString),
-         logger(jarFile.sha256.map(_.toLower) == signature)))
+      (logger(jarFile.toString),
+       logger(jarFile.sha256.map(_.toLower) == signature))
 
-    }).toList.unzip
+    }).toList
 
-    val badChecksums: String = checksums.collect{
+    val badChecksums: String = jarPaths.collect{
       case (jar, false) => jar
     } match {
       case List() => "\nAll checksums match"
@@ -67,7 +66,7 @@ object Bootstrap {
     val extraPreamble = "\nConfigured using " + confURL + badChecksums
 
     val out: Setup = in.copy(
-      classpathEntries = in.classpathEntries.map(_ ++ jarPaths),
+      classpathEntries = in.classpathEntries.map(_ ++ jarPaths.unzip._1),
       codePreambles = in.codePreambles.map(_.map{
         case CodePreamble("Spark", code) =>
           CodePreamble("Spark", loadConf +: code :+ setMaster)
