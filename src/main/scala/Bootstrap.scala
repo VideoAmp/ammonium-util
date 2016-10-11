@@ -1,11 +1,11 @@
-package vamp.ammonium.setup
+import vamp.ammonium.setup.{Setup, CodePreamble}
+import vamp.ammonium.setup.hocon.extractSetup
 
 import java.net.URL
-import java.io.{File, FileOutputStream, InputStream}
-import scala.annotation.tailrec
-import hocon.extractSetup
 import com.typesafe.config.ConfigFactory
 import ammonite.api.{ Classpath, Eval }
+
+import better.files._
 
 object Bootstrap {
   def apply(masterIP: String,
@@ -16,30 +16,46 @@ object Bootstrap {
             eval: Eval): Unit = {
     val logger = logMaker(silent)
 
-    val jars = new File("/tmp/flint/jars")
-    jars.mkdirs()
+    val jars = "/tmp/flint/jars".toFile
+    jars.createDirectories()
 
     val serverRoot = new URL("http", masterIP, port, "/")
 
     val jsons: Iterator[Seq[String]] =
-      scala.io.Source.fromInputStream(
-        new URL(serverRoot, "jars/MANIFEST.json")
-        .openStream())
+      scala.io.Source.fromURL(new URL(serverRoot, "jars/MANIFEST.json"))
       .getLines()
       .sliding(4)
 
-    val jarPaths: Iterator[String] = for {
+    logger("Checking manifest and fetching missing jar files...")
+
+    val (jarPaths, checksums) = (for {
       JSON(Jar(name, signature)) <- jsons
-      dir = new File(jars, signature)
-      jarFile = new File(dir, name)
+      dir = jars/signature
+      jarFile = dir/name
     } yield {
-        logger(
-          if (dir.mkdir()) {
-            ioLoop(new URL(serverRoot, "jars/" + name).openStream(),
-                   new FileOutputStream(jarFile))
-            "Fetched from server:"
-          } else "Found locally:")
-        logger(jarFile.toString)
+      if (!dir.exists()) {
+        dir.createDirectory()
+        val src = new URL(serverRoot, "jars/" + name).openStream()
+        jarFile.writeBytes(
+          Iterator.continually(src.read())
+          .takeWhile(_ != -1)
+          .map(_.toByte))
+        logger("Fetched from server:")
+      } else {
+        logger("Found locally:")
+      }
+
+      (jarFile.toString,
+        (logger(jarFile.toString),
+         jarFile.sha256.map(_.toLower) == signature))
+
+    }).toList.unzip
+
+    val badChecksums: String = checksums.collect{
+      case (jar, false) => jar
+    } match {
+      case List() => "\nAll checksums match"
+      case ls => ls.mkString("\nBad checksums found:", "\n", "")
     }
 
     val in: Setup = extractSetup(ConfigFactory.parseURL(new URL(serverRoot, "setup/flint"))).get
@@ -47,9 +63,7 @@ object Bootstrap {
     val confURL = new URL(serverRoot, "conf/spark-defaults.conf")
     val loadConf = "_root_.vamp.ammonium.SparkProperties.loadURL(\"" + confURL + "\")"
     val setMaster = "sparkConf.setMaster(\"spark://" + masterIP + ":7077\")"
-    val extraPreamble = "\nConfigured using " + confURL
-
-    logger("Checking manifest and fetching missing jar files...")
+    val extraPreamble = "\nConfigured using " + confURL + badChecksums
 
     val out: Setup = in.copy(
       classpathEntries = in.classpathEntries.map(_ ++ jarPaths),
@@ -71,23 +85,6 @@ object Bootstrap {
         Some(Jar(nameLine.split("\"")(3),
                  signatureLine.split("\"")(3)))
       case _ => None
-    }
-  }
-
-  private def ioLoop(input: InputStream, output: FileOutputStream): Unit = {
-    @tailrec
-    def loop: Unit = {
-      val byte = input.read()
-      if (byte != -1) {
-        output.write(byte)
-        loop
-      }
-    }
-    try {
-      loop
-    } finally {
-      input.close()
-      output.close()
     }
   }
 
