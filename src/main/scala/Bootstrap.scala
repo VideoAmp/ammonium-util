@@ -14,7 +14,8 @@ object Bootstrap {
             silentEval: Boolean = true)(
             implicit classpath: Classpath,
             eval: Eval): Unit = {
-    val logger = logMaker(silent)
+    val maybePrint: Any => Unit = if (silent) x => () else println
+    def logger[T](x: T): T = {maybePrint(x); x}
 
     val jars = "/tmp/flint/jars".toFile
     jars.createDirectories()
@@ -47,7 +48,7 @@ object Bootstrap {
 
       (jarFile.toString,
         (logger(jarFile.toString),
-         jarFile.sha256.map(_.toLower) == signature))
+         logger(jarFile.sha256.map(_.toLower) == signature)))
 
     }).toList.unzip
 
@@ -55,7 +56,7 @@ object Bootstrap {
       case (jar, false) => jar
     } match {
       case List() => "\nAll checksums match"
-      case ls => ls.mkString("\nBad checksums found:", "\n", "")
+      case ls => ls.mkString("\nBad checksums found:\n", "\n", "")
     }
 
     val in: Setup = extractSetup(ConfigFactory.parseURL(new URL(serverRoot, "setup/flint"))).get
@@ -87,8 +88,4 @@ object Bootstrap {
       case _ => None
     }
   }
-
-  private def logMaker(silent: Boolean): String => String =
-    if (silent) x => x
-    else x => {println(x); x}
 }
