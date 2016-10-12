@@ -18,7 +18,8 @@ libraryDependencies ++= Seq(
   "com.github.alexarchambault.ammonium" % s"interpreter-api_${scalaVersion.value}" % ammoniumVersion % "provided",
   "io.get-coursier" %% "coursier" % "1.0.0-M11-1",
   "com.github.kxbmap" %% "configs" % "0.4.2",
-  "com.github.pathikrit" %% "better-files" % "2.16.0"
+  "com.github.pathikrit" %% "better-files" % "2.16.0",
+  "io.argonaut" %% "argonaut" % "6.1"
 )
 
 enablePlugins(BuildInfoPlugin)

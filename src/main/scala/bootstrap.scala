@@ -6,10 +6,15 @@ import com.typesafe.config.ConfigFactory
 import ammonite.api.{ Classpath, Eval }
 
 import better.files._
+import argonaut._, Argonaut._
 
 object bootstrap {
+  case class Jar(name: String, signature: String)
+  implicit def JarDecodeJson: DecodeJson[Jar] = jdecode2L(Jar.apply)("name", "signature")
+
   def apply(masterIP: String,
             port: Int = 8088,
+            jarsPath: String = "/tmp/flint/jars",
             silent: Boolean = true,
             silentEval: Boolean = true)(
             implicit classpath: Classpath,
@@ -17,20 +22,22 @@ object bootstrap {
     val maybePrint: Any => Unit = if (silent) x => () else println
     def logger[T](x: T): T = {maybePrint(x); x}
 
-    val jars = "/tmp/flint/jars".toFile
+    val jars = jarsPath.toFile
     jars.createDirectories()
 
     val serverRoot = new URL("http", masterIP, port, "/")
 
-    val jsons: Iterator[Seq[String]] =
+    val manifest: List[Jar] =
       scala.io.Source.fromURL(new URL(serverRoot, "jars/MANIFEST.json"))
       .getLines()
-      .sliding(4)
+      .mkString("\n")
+      .decodeOption[List[Jar]]
+      .getOrElse(Nil)
 
     logger("Checking manifest and fetching missing jar files...")
 
-    val jarPaths = (for {
-      JSON(Jar(name, signature)) <- jsons
+    val jarPaths: List[(String, Boolean)] = for {
+      Jar(name, signature) <- manifest
       dir = jars/signature
       jarFile = dir/name
     } yield {
@@ -49,7 +56,7 @@ object bootstrap {
       (logger(jarFile.toString),
        logger(jarFile.sha256.map(_.toLower) == signature))
 
-    }).toList
+    }
 
     val badChecksums: String = jarPaths.collect{
       case (jar, false) => jar
@@ -75,16 +82,5 @@ object bootstrap {
       preamble = in.preamble.map(_ + extraPreamble))
 
     new vamp.ammonium.Setup(classpath, eval).init(out, silent, silentEval)
-  }
-
-  private case class Jar(name: String, signature: String)
-
-  private object JSON {
-    def unapply(json: Seq[String]): Option[Jar] = json match {
-      case Seq("  {", nameLine, signatureLine, "  },") =>
-        Some(Jar(nameLine.split("\"")(3),
-                 signatureLine.split("\"")(3)))
-      case _ => None
-    }
   }
 }
