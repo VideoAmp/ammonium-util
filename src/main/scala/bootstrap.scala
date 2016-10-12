@@ -44,10 +44,14 @@ object bootstrap {
       if (!dir.exists()) {
         dir.createDirectory()
         val src = new URL(serverRoot, "jars/" + name).openStream()
-        jarFile.writeBytes(
-          Iterator.continually(src.read())
-          .takeWhile(_ != -1)
-          .map(_.toByte))
+        try {
+          jarFile.writeBytes(
+            Iterator.continually(src.read())
+            .takeWhile(_ != -1)
+            .map(_.toByte))
+        } finally {
+          src.close  
+        }
         logger("Fetched from server:")
       } else {
         logger("Found locally:")
@@ -55,7 +59,6 @@ object bootstrap {
 
       (logger(jarFile.toString),
        logger(jarFile.sha256.map(_.toLower) == signature))
-
     }
 
     val badChecksums: String = jarPaths.collect{
