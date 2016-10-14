@@ -1,11 +1,11 @@
 package vamp.ammonium
 
 import java.net.URL
-import java.io.{InputStreamReader, Reader, File}
+import java.io.{ InputStreamReader, Reader, File }
 import java.util.Properties
 import scala.collection.JavaConverters._
 
-import better.files.{File => SFile, _}
+import better.files.{ File => SFile, _ }
 
 object SparkProperties {
   def load(filename: String): Unit = loadFile(filename)
@@ -16,7 +16,8 @@ object SparkProperties {
     val inReader = file.newInputStream.reader
     try {
       load(inReader)
-    } finally {
+    }
+    finally {
       inReader.close
     }
   }
@@ -26,7 +27,8 @@ object SparkProperties {
     val inReader = new InputStreamReader(url.openStream(), "UTF-8")
     try {
       load(inReader)
-    } finally {
+    }
+    finally {
       inReader.close
     }
   }

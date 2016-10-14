@@ -1,4 +1,4 @@
-import vamp.ammonium.setup.{Setup, CodePreamble}
+import vamp.ammonium.setup.{ Setup, CodePreamble }
 import vamp.ammonium.setup.hocon.extractSetup
 
 import java.net.URL
@@ -12,15 +12,19 @@ object bootstrap {
   case class Jar(name: String, signature: String)
   implicit def JarDecodeJson: DecodeJson[Jar] = jdecode2L(Jar.apply)("name", "signature")
 
-  def apply(masterIP: String,
-            port: Int = 8088,
-            jarsPath: String = "/tmp/flint/jars",
-            silent: Boolean = true,
-            silentEval: Boolean = true)(
-            implicit classpath: Classpath,
-            eval: Eval): Unit = {
+  def apply(
+    masterIP: String,
+    port: Int = 8088,
+    jarsPath: String = "/var/tmp/ammonium/bootstrap",
+    silent: Boolean = true,
+    silentEval: Boolean = true
+  )(
+    implicit
+    classpath: Classpath,
+    eval: Eval
+  ): Unit = {
     val maybePrint: Any => Unit = if (silent) x => () else println
-    def logger[T](x: T): T = {maybePrint(x); x}
+    def logger[T](x: T): T = { maybePrint(x); x }
 
     val jars = jarsPath.toFile
     jars.createDirectories()
@@ -29,17 +33,17 @@ object bootstrap {
 
     val manifest: List[Jar] =
       scala.io.Source.fromURL(new URL(serverRoot, "jars/MANIFEST.json"))
-      .getLines()
-      .mkString("\n")
-      .decodeOption[List[Jar]]
-      .getOrElse(Nil)
+        .getLines()
+        .mkString("\n")
+        .decodeOption[List[Jar]]
+        .getOrElse(Nil)
 
     logger("Checking manifest and fetching missing jar files...")
 
     val jarPaths: List[(String, Boolean)] = for {
       Jar(name, signature) <- manifest
-      dir = jars/signature
-      jarFile = dir/name
+      dir = jars / signature
+      jarFile = dir / name
     } yield {
       if (!dir.exists()) {
         dir.createDirectory()
@@ -47,18 +51,23 @@ object bootstrap {
         try {
           jarFile.writeBytes(
             Iterator.continually(src.read())
-            .takeWhile(_ != -1)
-            .map(_.toByte))
-        } finally {
-          src.close  
+              .takeWhile(_ != -1)
+              .map(_.toByte)
+          )
+        }
+        finally {
+          src.close
         }
         logger("Fetched from server:")
-      } else {
+      }
+      else {
         logger("Found locally:")
       }
 
-      (logger(jarFile.toString),
-       logger(jarFile.sha256.map(_.toLower) == signature))
+      (
+        logger(jarFile.toString),
+        logger(jarFile.sha256.map(_.toLower) == signature)
+      )
     }
 
     val badChecksums: String = jarPaths.collect{
@@ -82,7 +91,8 @@ object bootstrap {
           CodePreamble("Spark", loadConf +: code :+ setMaster)
         case x => x
       }),
-      preamble = in.preamble.map(_ + extraPreamble))
+      preamble = in.preamble.map(_ + extraPreamble)
+    )
 
     new vamp.ammonium.Setup(classpath, eval).init(out, silent, silentEval)
   }
