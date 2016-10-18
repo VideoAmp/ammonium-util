@@ -10,7 +10,7 @@ import argonaut._, Argonaut._
 
 object bootstrap {
   case class Jar(name: String, signature: String)
-  implicit def JarDecodeJson: DecodeJson[Jar] = jdecode2L(Jar.apply)("name", "signature")
+  implicit def JarDecodeJson: CodecJson[Jar] = CodecJson.derive[Jar]
 
   def apply(
     masterIP: String,
@@ -23,61 +23,51 @@ object bootstrap {
     classpath: Classpath,
     eval: Eval
   ): Unit = {
-    val maybePrint: Any => Unit = if (silent) x => () else println
-    def logger[T](x: T): T = { maybePrint(x); x }
+    val logger: String => String = if (silent) identity else x => { println(x); x }
 
-    val jars = jarsPath.toFile
-    jars.createDirectories()
+    val jarsDir = jarsPath.toFile
+    jarsDir.createDirectories
 
     val serverRoot = new URL("http", masterIP, port, "/")
 
-    val manifest: List[Jar] =
-      scala.io.Source.fromURL(new URL(serverRoot, "jars/MANIFEST.json"))
-        .getLines()
-        .mkString("\n")
-        .decodeOption[List[Jar]]
-        .getOrElse(Nil)
+    val manifest: List[Jar] = new URL(serverRoot, "jars/MANIFEST.json")
+      .openStream
+      .reader
+      .buffered
+      .tokens
+      .mkString
+      .decodeOption[List[Jar]]
+      .getOrElse(throw new java.lang.RuntimeException("Failed to parse manifest at " + serverRoot + "jars/MANIFEST.json"))
+
+    val in: Setup = extractSetup(ConfigFactory.parseURL(new URL(serverRoot, "setup/flint")))
+      .getOrElse(throw new java.lang.RuntimeException("Failed to extract setup from " + serverRoot + "setup/flint"))
 
     logger("Checking manifest and fetching missing jar files...")
 
     val jarPaths: List[(String, Boolean)] = for {
       Jar(name, signature) <- manifest
-      dir = jars / signature
-      jarFile = dir / name
+      jarFile = jarsDir / signature / name
     } yield {
-      if (!dir.exists()) {
-        dir.createDirectory()
-        val src = new URL(serverRoot, "jars/" + name).openStream()
-        try {
-          jarFile.writeBytes(
-            Iterator.continually(src.read())
-              .takeWhile(_ != -1)
-              .map(_.toByte)
-          )
-        }
-        finally {
-          src.close
-        }
+      if (!jarFile.exists) {
+        jarFile.createIfNotExists(asDirectory = false, createParents = true)
+        new URL(serverRoot, "jars/" + name).openStream > jarFile.newOutputStream
         logger("Fetched from server:")
       }
       else {
         logger("Found locally:")
       }
-
       (
         logger(jarFile.toString),
-        logger(jarFile.sha256.map(_.toLower) == signature)
+        jarFile.sha256.map(_.toLower) == signature
       )
     }
 
     val badChecksums: String = jarPaths.collect{
       case (jar, false) => jar
     } match {
-      case List() => "\nAll checksums match"
+      case Nil => "\nAll checksums match"
       case ls => ls.mkString("\nBad checksums found:\n", "\n", "")
     }
-
-    val in: Setup = extractSetup(ConfigFactory.parseURL(new URL(serverRoot, "setup/flint"))).get
 
     val confURL = new URL(serverRoot, "conf/spark-defaults.conf")
     val loadConf = "_root_.vamp.ammonium.SparkProperties.loadURL(\"" + confURL + "\")"
