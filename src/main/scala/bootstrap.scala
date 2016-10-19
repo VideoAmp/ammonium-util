@@ -37,10 +37,10 @@ object bootstrap {
       .tokens
       .mkString
       .decodeOption[List[Jar]]
-      .getOrElse(throw new java.lang.RuntimeException("Failed to parse manifest at " + serverRoot + "jars/MANIFEST.json"))
+      .getOrElse(throw new RuntimeException("Failed to parse manifest at " + serverRoot + "jars/MANIFEST.json"))
 
     val in: Setup = extractSetup(ConfigFactory.parseURL(new URL(serverRoot, "setup/flint")))
-      .getOrElse(throw new java.lang.RuntimeException("Failed to extract setup from " + serverRoot + "setup/flint"))
+      .getOrElse(throw new RuntimeException("Failed to extract setup from " + serverRoot + "setup/flint"))
 
     logger("Checking manifest and fetching missing jar files...")
 
@@ -58,24 +58,24 @@ object bootstrap {
       }
       (
         logger(jarFile.toString),
-        jarFile.sha256.map(_.toLower) == signature
+        jarFile.sha256.toLowerCase == signature.toLowerCase
       )
     }
 
-    val badChecksums: String = jarPaths.collect{
+    jarPaths.collect{
       case (jar, false) => jar
     } match {
-      case Nil => "\nAll checksums match"
-      case ls => ls.mkString("\nBad checksums found:\n", "\n", "")
+      case Nil => ()
+      case ls => throw new RuntimeException(ls.mkString("Bad checksums found: ", ", ", ""))
     }
 
     val confURL = new URL(serverRoot, "conf/spark-defaults.conf")
     val loadConf = "_root_.vamp.ammonium.SparkProperties.loadURL(\"" + confURL + "\")"
     val setMaster = "sparkConf.setMaster(\"spark://" + masterIP + ":7077\")"
-    val extraPreamble = "\nConfigured using " + confURL + badChecksums
+    val extraPreamble = "\nConfigured using " + confURL
 
     val out: Setup = in.copy(
-      classpathEntries = in.classpathEntries.map(_ ++ jarPaths.unzip._1),
+      classpathEntries = in.classpathEntries.map(_ ++ jarPaths.map(_._1)),
       codePreambles = in.codePreambles.map(_.map{
         case CodePreamble("Spark", code) =>
           CodePreamble("Spark", loadConf +: code :+ setMaster)
