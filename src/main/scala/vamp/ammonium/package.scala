@@ -1,18 +1,18 @@
-import vamp.ammonium.Bootstrap
+package vamp
 
 import java.net.InetAddress
 
-import ammonite.api.{ Classpath, Eval }
+import ammonite.runtime.InterpAPI
 
-object bootstrap {
-  def apply(
+package object ammonium {
+  def bootstrap(
     masterIP: String,
     port: Int = 8088,
     cacheDir: String = "/var/tmp/ammonium/bootstrap",
     silent: Boolean = true,
     silentEval: Boolean = true
-  )(implicit classpath: Classpath, eval: Eval): Unit = {
-    val bootstrap = new Bootstrap(cacheDir, classpath, eval)
+  )(implicit interp: InterpAPI): Unit = {
+    val bootstrap = new Bootstrap(cacheDir, interp)
     bootstrap.fromServer(InetAddress.getByName(masterIP), port, silent, silentEval)
   }
 }

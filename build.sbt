@@ -12,14 +12,14 @@ publishTo := {
     Some("releases"  at vamp + "release")
 }
 
-val ammoniumVersion = "0.4.0-M6-1"
+val ammoniumVersion = "0.8.2"
 
 libraryDependencies ++= Seq(
-  "com.github.alexarchambault.ammonium" % s"interpreter-api_${scalaVersion.value}" % ammoniumVersion % "provided",
-  "io.get-coursier" %% "coursier" % "1.0.0-M11-1",
-  "com.github.kxbmap" %% "configs" % "0.4.2",
+  "org.jupyter-scala" % "ammonite-runtime" % ammoniumVersion % "provided" cross CrossVersion.full,
+  // There's a perf regression in hash computations in better-files as of 2.17.1
+  // Do *not* upgrade this dep until that perf regression is resolved
   "com.github.pathikrit" %% "better-files" % "2.16.0",
-  "io.argonaut" %% "argonaut" % "6.1"
+  "io.argonaut" %% "argonaut" % "6.2"
 )
 
 enablePlugins(BuildInfoPlugin)
