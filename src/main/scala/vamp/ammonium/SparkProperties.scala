@@ -11,11 +11,11 @@ object SparkProperties {
   def load(filename: String): Unit = loadFile(filename)
 
   def loadFile(filename: String): Unit = loadFile(filename.toFile)
-  def loadFile(file: JFile): Unit = loadFile(file.toScala)
-  def loadFile(file: File): Unit = load(file.newFileReader.autoClosed)
+  def loadFile(file: JFile): Unit      = loadFile(file.toScala)
+  def loadFile(file: File): Unit       = load(file.newFileReader.autoClosed)
 
   def loadURL(urlString: String): Unit = loadURL(new URL(urlString))
-  def loadURL(url: URL): Unit = load(url.openStream.reader.autoClosed)
+  def loadURL(url: URL): Unit          = load(url.openStream.reader.autoClosed)
 
   private def load(inReader: ManagedResource[Reader]): Unit =
     for {

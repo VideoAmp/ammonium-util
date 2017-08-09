@@ -17,10 +17,10 @@ class Bootstrap(cacheDir: String, interp: InterpAPI) {
   import Bootstrap._
 
   def fromServer(
-    masterAddress: InetAddress,
-    port: Int = 8088,
-    silent: Boolean = true,
-    silentEval: Boolean = true
+      masterAddress: InetAddress,
+      port: Int = 8088,
+      silent: Boolean = true,
+      silentEval: Boolean = true
   ): Unit = {
     val logger: String => String = if (silent) identity else x => { println(x); x }
 
@@ -29,14 +29,11 @@ class Bootstrap(cacheDir: String, interp: InterpAPI) {
 
     val serverRoot = new URL("http", masterAddress.getHostAddress, port, "/")
 
-    val manifest: List[Jar] = new URL(serverRoot, "jars/MANIFEST.json")
-      .openStream
-      .reader
-      .buffered
-      .tokens
-      .mkString
-      .decodeOption[List[Jar]]
-      .getOrElse(throw new RuntimeException("Failed to parse manifest at " + serverRoot + "jars/MANIFEST.json"))
+    val manifest: List[Jar] =
+      new URL(serverRoot, "jars/MANIFEST.json").openStream.reader.buffered.tokens.mkString
+        .decodeOption[List[Jar]]
+        .getOrElse(throw new RuntimeException(
+          "Failed to parse manifest at " + serverRoot + "jars/MANIFEST.json"))
 
     logger("Checking manifest and fetching missing jar files...")
 
@@ -48,21 +45,17 @@ class Bootstrap(cacheDir: String, interp: InterpAPI) {
         jarFile.createIfNotExists(asDirectory = false, createParents = true)
         new URL(serverRoot, "jars/" + name).openStream > jarFile.newOutputStream
         logger("Fetched from server:")
-      }
-      else {
+      } else {
         logger("Found locally:")
       }
-      (
-        logger(jarFile.toString),
-        jarFile.sha256.toLowerCase == signature.toLowerCase
-      )
+      (logger(jarFile.toString), jarFile.sha256.toLowerCase == signature.toLowerCase)
     }
 
-    jarPaths.collect{
+    jarPaths.collect {
       case (jar, false) => jar
     } match {
       case Nil => ()
-      case ls => throw new RuntimeException(ls.mkString("Bad checksums found: ", ", ", ""))
+      case ls  => throw new RuntimeException(ls.mkString("Bad checksums found: ", ", ", ""))
     }
 
     logger(s"Adding ${jarPaths.size} jars to classpath")
@@ -80,9 +73,7 @@ class Bootstrap(cacheDir: String, interp: InterpAPI) {
     }
 
     val bootstrapScript =
-      new URL(serverRoot, "bootstrap.sc")
-        .openStream
-        .lines
+      new URL(serverRoot, "bootstrap.sc").openStream.lines
         .mkString("\n")
     logAndEval(bootstrapScript)
     logger("")
@@ -106,7 +97,8 @@ class Bootstrap(cacheDir: String, interp: InterpAPI) {
     logger("")
 
     println(s"Configured using $confUrl")
-    println("Adjust the Spark config via `sparkConf`. Then access the `SparkSession` at `spark` or the `SparkContext` at `sc`.")
+    println(
+      "Adjust the Spark config via `sparkConf`. Then access the `SparkSession` at `spark` or the `SparkContext` at `sc`.")
   }
 }
 
