@@ -1,7 +1,6 @@
 package vamp.ammonium
 
 import java.net.{ InetAddress, URL }
-import java.io.{ Reader, File => JFile }
 import java.util.Properties
 
 import scala.collection.JavaConverters._
@@ -22,7 +21,9 @@ class Bootstrap(cacheDir: String, interp: InterpAPI) {
       silent: Boolean = true,
       silentEval: Boolean = true
   ): Unit = {
+    // scalastyle:off println
     val logger: String => String = if (silent) identity else x => { println(x); x }
+    // scalastyle:on println
 
     val cacheBDir = cacheDir.toFile
     cacheBDir.createDirectories
@@ -96,9 +97,12 @@ class Bootstrap(cacheDir: String, interp: InterpAPI) {
     logAndEval(addJars)
     logger("")
 
+    // scalastyle:off println
     println(s"Configured using $confUrl")
     println(
-      "Adjust the Spark config via `sparkConf`. Then access the `SparkSession` at `spark` or the `SparkContext` at `sc`.")
+      "Adjust the Spark config via `sparkConf`. Then access the `SparkSession` at `spark` or " +
+        "the `SparkContext` at `sc`.")
+    // scalastyle:on println
   }
 }
 

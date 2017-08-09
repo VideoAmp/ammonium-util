@@ -1,8 +1,9 @@
 package vamp.ammonium
 
+import java.io.{ File => JFile, Reader }
 import java.net.URL
-import java.io.{ Reader, File => JFile }
 import java.util.Properties
+
 import scala.collection.JavaConverters._
 
 import better.files._
