@@ -1,9 +1,6 @@
 package vamp.ammonium
 
 import java.net.{ InetAddress, URL }
-import java.util.Properties
-
-import scala.collection.JavaConverters._
 
 import ammonite.ops.Path
 import ammonite.runtime.InterpAPI

@@ -2,6 +2,23 @@ name := "ammonium-util"
 organization := "com.videoamp"
 scalaVersion := "2.11.11"
 
+scalacOptions := Seq(
+  "-deprecation",
+  "-language:implicitConversions",
+  "-language:postfixOps",
+  "-feature",
+  "-unchecked",
+  "-Xlint:_",
+  "-Ywarn-adapted-args",
+  "-Ywarn-inaccessible",
+  "-Ywarn-infer-any",
+  "-Ywarn-nullary-override",
+  "-Ywarn-nullary-unit",
+  "-Ywarn-numeric-widen",
+  "-Ywarn-unused",
+  "-Ywarn-unused-import"
+)
+
 publishTo := {
   val vamp = "https://videoamp.artifactoryonline.com/videoamp/"
   if (isSnapshot.value)
