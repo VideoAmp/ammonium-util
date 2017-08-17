@@ -18,13 +18,12 @@ scalacOptions := Seq(
   "-Ywarn-unused-import"
 )
 
-publishTo := {
-  val vamp = "https://videoamp.artifactoryonline.com/videoamp/"
+publishTo := Some(
   if (isSnapshot.value)
-    Some("snapshots" at vamp + "snapshot")
+    Opts.resolver.sonatypeSnapshots
   else
-    Some("releases" at vamp + "release")
-}
+    Opts.resolver.sonatypeStaging
+)
 
 val ammoniumVersion = "0.8.3"
 
