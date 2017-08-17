@@ -1,6 +1,5 @@
 name := "ammonium-util"
 organization := "com.videoamp"
-scalaVersion := "2.11.11"
 
 scalacOptions := Seq(
   "-deprecation",
