@@ -1,5 +1,7 @@
 # VideoAmp's Ammonium Utils
 
+[![Build Status](https://travis-ci.org/VideoAmp/ammonium-util.svg?branch=master)](https://travis-ci.org/VideoAmp/ammonium-util)
+
 These utilities consist principally of a bootstrapping system for connecting to a [Flint](https://github.com/VideoAmp/flint) Spark cluster from an [Ammonium](https://github.com/jupyter-scala/ammonium) shell or [Jupyter Scala](https://github.com/jupyter-scala/jupyter-scala) notebook.
 
 ## Usage
