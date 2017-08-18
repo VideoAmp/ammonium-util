@@ -1,6 +1,7 @@
 # VideoAmp's Ammonium Utils
 
-[![Build Status](https://travis-ci.org/VideoAmp/ammonium-util.svg?branch=master)](https://travis-ci.org/VideoAmp/ammonium-util)
+[![Travis](https://img.shields.io/travis/VideoAmp/ammonium-util.svg)](https://travis-ci.org/VideoAmp/ammonium-util)
+[![Maven Central](https://img.shields.io/maven-central/v/com.videoamp/ammonium-util_2.11.svg)](https://repo1.maven.org/maven2/com/videoamp/ammonium-util_2.11/)
 
 These utilities consist principally of a bootstrapping system for connecting to a [Flint](https://github.com/VideoAmp/flint) Spark cluster from an [Ammonium](https://github.com/jupyter-scala/ammonium) shell or [Jupyter Scala](https://github.com/jupyter-scala/jupyter-scala) notebook.
 
@@ -9,7 +10,7 @@ These utilities consist principally of a bootstrapping system for connecting to 
 Assuming you have a Flint Spark master running at ip address `masterIP`, run
 
 ```scala
-interp.load.ivy("com.videoamp" %% "ammonium-util" % "2.0.0")
+interp.load.ivy("com.videoamp" %% "ammonium-util" % "2.0.1")
 vamp.ammonium.bootstrap(masterIP)
 ```
 
