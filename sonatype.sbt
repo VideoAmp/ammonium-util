@@ -8,3 +8,10 @@ scmInfo := Some(
     "scm:git@github.com:VideoAmp/ammonium-util.git"
   )
 )
+developers := List(
+  Developer(
+    id = "mallman",
+    name = "Michael Allman",
+    email = "msa@allman.ms",
+    url = url("https://github.com/mallman"))
+)
