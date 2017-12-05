@@ -10,9 +10,9 @@ package object ammonium {
       port: Int = 8088,
       cacheDir: String = "/var/tmp/ammonium/bootstrap",
       silent: Boolean = true,
-      silentEval: Boolean = true
-  )(implicit interp: InterpAPI): Unit = {
+      silentEval: Boolean = true,
+      env: String = "use1") (implicit interp: InterpAPI): Unit = {
     val bootstrap = new Bootstrap(cacheDir, interp)
-    bootstrap.fromServer(InetAddress.getByName(masterIP), port, silent, silentEval)
+    bootstrap.fromServer(InetAddress.getByName(masterIP), port, silent, silentEval, env)
   }
 }

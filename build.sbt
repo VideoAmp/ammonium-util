@@ -18,12 +18,20 @@ scalacOptions := Seq(
   "-Ywarn-unused-import"
 )
 
-publishTo := Some(
-  if (isSnapshot.value)
-    Opts.resolver.sonatypeSnapshots
-  else
-    Opts.resolver.sonatypeStaging
-)
+  publishTo := {
+    val nexus = "https://videoamp.jfrog.io/videoamp/"
+    if (isSnapshot.value) {
+      Some("snapshots" at nexus + "snapshot")
+    } else {
+      Some("releases" at nexus + "release")
+    }
+  }
+
+  organization := "com.videoamp"
+
+  credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
+
+  resolvers += "vamp repo" at "https://videoamp.jfrog.io/videoamp/repo/"
 
 val ammoniumVersion = "0.8.3"
 

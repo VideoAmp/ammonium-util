@@ -16,7 +16,8 @@ class Bootstrap(cacheDir: String, interp: InterpAPI) {
       masterAddress: InetAddress,
       port: Int = 8088,
       silent: Boolean = true,
-      silentEval: Boolean = true
+      silentEval: Boolean = true,
+      env: String
   ): Unit = {
     // scalastyle:off println
     val logger: String => String = if (silent) identity else x => { println(x); x }
@@ -70,11 +71,14 @@ class Bootstrap(cacheDir: String, interp: InterpAPI) {
       interp.load(code, silentEval)
     }
 
-    val bootstrapScript =
-      new URL(serverRoot, "bootstrap.sc").openStream.lines
-        .mkString("\n")
-    logAndEval(bootstrapScript)
-    logger("")
+    if (env.contains("use1")) {
+      logAndEval(new URL(serverRoot, "bootstrap.sc").openStream().lines.mkString("\n"))
+      logger("")
+    }
+    if (env.contains("dc3")) {
+      logAndEval(new URL(serverRoot, "bootstrap_dc3.sc").openStream().lines.mkString("\n"))
+      logger("")
+    }
 
     logAndEval(s"""sparkConf.setMaster("spark://${masterAddress.getHostAddress}:7077")""")
 

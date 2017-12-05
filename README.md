@@ -10,8 +10,11 @@ These utilities consist principally of a bootstrapping system for connecting to 
 Assuming you have a Flint Spark master running at ip address `masterIP`, run
 
 ```scala
-interp.load.ivy("com.videoamp" %% "ammonium-util" % "2.0.1")
-vamp.ammonium.bootstrap(masterIP)
+interp.load.ivy("com.videoamp" %% "ammonium-util" % "2.0.2")
+# dc3
+vamp.ammonium.bootstrap(masterIP, env="dc3")
+# use1
+vamp.ammonium.bootstrap(masterIP, env="use1")
 ```
 
 in a Jupyter Scala notebook to bind a `SparkConf` to the `sparkConf` variable in your notebook environment. After configuring Spark through `sparkConf`, you can access a bootstrapped and configured `SparkSession` with the `spark` notebook variable.
